@@ -1,0 +1,1192 @@
+openapi: 3.0.2
+info:
+  title: Magazino Environment Editor Public REST API
+  version: 1.0.0
+  description: |2-
+
+        This interface offers endpoints to export environments and deployments.
+        
+paths:
+  /api/public/v1/deployments:
+    get:
+      operationId: environment_editor_backend_api_endpoints_deployments_api_public_get_deployments
+      summary: Get a list of executed Deployments
+      parameters:
+        - in: query
+          name: states
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/DeploymentState'
+          required: false
+        - in: query
+          name: project_name
+          schema:
+            title: Project Name
+            type: string
+          required: false
+        - in: query
+          name: created_before
+          schema:
+            title: Created Before
+            type: number
+          required: false
+        - in: query
+          name: created_after
+          schema:
+            title: Created After
+            type: number
+          required: false
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                title: Response
+                type: array
+                items:
+                  $ref: '#/components/schemas/DeploymentOutSchema'
+      description: |-
+        Returns a history of Deployments by state (defaults to succesfull ones).
+
+        Returns:
+        ```
+        [
+            {
+                "id": "b75a4d85-43a2-4dd8-bae5-ea21cc54df39",
+                "project_id": "b75a4d85-43a2-4dd8-bae5-ea21cc54df26",
+                "version": 0.2.0,
+                "data_version": 2,
+                "state": "started",
+                "errors": [],
+                "timestamp_created": 1623922297.390299,
+                "timestamp_updated": 1623922297.390304,
+                "metadata": {...}
+            },
+            ...
+        ]
+        ```
+  /api/public/v1/deployments/{deployment_id}:
+    get:
+      operationId: environment_editor_backend_api_endpoints_deployments_api_public_get_deployment
+      summary: Get the status of a Deployment
+      parameters:
+        - in: path
+          name: deployment_id
+          schema:
+            title: Deployment Id
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeploymentOutSchema'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FailureResponse'
+      description: |-
+        Returns the status of the given Deployment.
+
+        Returns:
+        ```
+        {
+            "id": "b75a4d85-43a2-4dd8-bae5-ea21cc54df39",
+            "project_id": "b75a4d85-43a2-4dd8-bae5-ea21cc54df26",
+            "version": 0.2.0,
+            "data_version": 2,
+            "state": "started",
+            "errors": [],
+            "timestamp_created": 1623922297.390299,
+            "timestamp_updated": 1623922297.390304
+        }
+        ```
+  /api/public/v1/environments/{deployment_id}:
+    get:
+      operationId: environment_editor_backend_api_endpoints_environments_api_public_get_environment
+      summary: Get the Environment of a successful Deployment
+      parameters:
+        - in: path
+          name: deployment_id
+          schema:
+            title: Deployment Id
+            type: string
+          required: true
+        - in: query
+          name: filter_large_files
+          schema:
+            title: Filter Large Files
+            default: true
+            type: boolean
+          required: false
+      responses:
+        '200':
+          description: OK
+      description: |-
+        Returns the generated Environment files for a successfull Deployment.
+
+        Returns: environment.zip with all files as raw bytes
+  /api/public/v1/lif-structures/{deployment_id}:
+    get:
+      operationId: environment_editor_backend_api_endpoints_lif_structures_api_get_lif_structure
+      summary: Get a successfully generated environment in the Layout Interchange Format (LIF) LIF.
+      parameters:
+        - in: path
+          name: deployment_id
+          schema:
+            title: Deployment Id
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LIFStructure'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FailureResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FailureResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FailureResponse'
+      description: |-
+        Returns a LIF structure for a specific Deployment based on the Project Version data.
+
+        Responses:
+        200 - Successfully generated LIF structure.
+        400 - Failed to generate the LIF structure (e.g. due to outdated `data_version`).
+        404 - Failed to find a successful Deployment for the provided UUID.
+        500 - Unexpected error while generating the LIF structure.
+  /api/public/v1/vda-environments/latest:
+    get:
+      operationId: environment_editor_backend_api_endpoints_vda_environments_get_latest_vda_environment
+      summary: Get a VDA environment for the latest successful Deployment
+      parameters: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VdaEnvironment'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FailureResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FailureResponse'
+      description: |-
+        Returns a VDA environment for the latest successful Deployment based on the Project Version
+        data.
+
+         - fails if there is no successful Deployment so far (404)
+         - can fail if there are logical errors in the Project Version data (500)
+  /api/public/v1/vda-environments/{deployment_id}:
+    get:
+      operationId: environment_editor_backend_api_endpoints_vda_environments_get_vda_environment
+      summary: Get a VDA environment of a specific successful Deployment
+      parameters:
+        - in: path
+          name: deployment_id
+          schema:
+            title: Deployment Id
+            type: string
+          required: true
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VdaEnvironment'
+        '400':
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FailureResponse'
+        '404':
+          description: Not Found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FailureResponse'
+        '500':
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FailureResponse'
+      description: |-
+        Returns a VDA environment for a specific Deployment based on the Project Version data.
+
+         - fails if there is no Deployment with the given `deployment_id` (404)
+         - can fail if there are logical errors in the Project Version data (500)
+components:
+  schemas:
+    DeploymentState:
+      title: DeploymentState
+      description: An enumeration.
+      enum:
+        - started
+        - validated
+        - environment_is_generated
+        - deployed
+        - aborted
+      type: string
+    DeploymentError:
+      title: DeploymentError
+      type: object
+      properties:
+        error_code:
+          title: Error Code
+          type: integer
+        message:
+          title: Message
+          maxLength: 1023
+          type: string
+      required:
+        - error_code
+        - message
+    DeploymentOutSchema:
+      title: DeploymentOutSchema
+      type: object
+      properties:
+        id:
+          title: Id
+          description: UUID of the Deployment
+          type: string
+        project_id:
+          title: Project Id
+          description: UUID of the Project
+          type: string
+        project_name:
+          title: Project Name
+          type: string
+        version:
+          title: Version
+          description: Version of the Project (`x.y.z`).
+          type: string
+        data_version:
+          title: Data Version
+          description: Version of the data schema.
+          type: integer
+        state:
+          $ref: '#/components/schemas/DeploymentState'
+        errors:
+          title: Errors
+          default: []
+          type: array
+          items:
+            $ref: '#/components/schemas/DeploymentError'
+        timestamp_created:
+          title: Timestamp Created
+          description: Datetime as unix timestamp.
+          type: number
+        timestamp_updated:
+          title: Timestamp Updated
+          description: Datetime as unix timestamp.
+          type: number
+        metadata:
+          title: Metadata
+          description: Metadata about the deployment process.
+          type: object
+      required:
+        - id
+        - project_id
+        - project_name
+        - version
+        - data_version
+        - state
+        - timestamp_created
+        - timestamp_updated
+        - metadata
+    ErrorName:
+      title: ErrorName
+      description: |-
+        Error names as communicated to frontend.
+
+        Documented in https://magazino.atlassian.net/wiki/spaces/SD/pages/3529637983/Error+Messages.
+      enum:
+        - handover_station_does_not_exist
+        - invalid_graph
+        - invalid_image
+        - invalid_map
+        - invalid_model
+        - invalid_project_data
+        - invalid_source
+        - invalid_yaml
+        - yaml_does_not_exist
+        - duplicate_project_name
+        - duplicate_project_uuid
+        - incompatible_data_version
+        - max_number_of_copies_reached
+        - project_does_not_exist
+        - projectversion_does_already_exist
+        - projectversion_does_not_exist
+        - deployment_does_not_exist
+        - illegal_deployment
+        - multiple_active_deployments
+        - no_active_deployment
+        - unterminated_jobs_or_requests
+        - map_folder_already_exists
+        - map_folder_does_not_exist
+        - missing_map_file
+        - unexpected_error
+        - environment_upload_invalid_format
+        - environment_upload_invalid_structure
+        - environment_upload_error
+      type: string
+    FailureResponse:
+      title: FailureResponse
+      type: object
+      properties:
+        error_id:
+          $ref: '#/components/schemas/ErrorName'
+        error:
+          title: Error
+          type: string
+      required:
+        - error
+    MetaInformation:
+      title: MetaInformation
+      type: object
+      properties:
+        projectIdentification:
+          title: Projectidentification
+          description: Human-readable name of the project (e.g., for display purposes).
+          type: string
+        creator:
+          title: Creator
+          description: Creator of the LIF file (e.g., name of company, or name of person)
+          type: string
+        exportTimestamp:
+          title: Exporttimestamp
+          description: 'The timestamp at which this LIF file was created/updated/modified specified in ISO8601. Used to distinguish LIF file versions over time. '
+          type: string
+        lifVersion:
+          title: Lifversion
+          description: 'Version of LIF: [Major].[Minor].[Patch] (0.10.0).'
+          default: 0.10.0
+          type: string
+      required:
+        - projectIdentification
+        - creator
+        - exportTimestamp
+    NodePosition:
+      title: NodePosition
+      type: object
+      properties:
+        x:
+          title: X
+          description: X position on the layout in reference to the global origin.
+          type: number
+        'y':
+          title: 'Y'
+          description: Y position on the layout in reference to the global origin.
+          type: number
+      required:
+        - x
+        - 'y'
+    ActionType:
+      title: ActionType
+      description: Possibly what we could see as job class
+      enum:
+        - startPause
+        - stopPause
+        - startCharging
+        - stopCharging
+        - initPosition
+        - stateRequest
+        - logReport
+        - pick
+        - drop
+        - detectObject
+        - finePositioning
+        - waitForTrigger
+        - cancelOrder
+        - resetAgv
+        - factsheetRequest
+        - chargeBattery
+        - initialize
+        - pause
+        - handling
+        - identify
+        - sleep
+        - scanFreeSpot
+        - emergencyStop
+        - speedLimit
+        - speedLimitBackwards
+        - silent
+        - displayText
+        - setHeight
+        - setAlarm
+        - setAgvParameter
+        - opticalSignal
+        - acousticSignal
+        - switchSensorMode
+        - goToPosition
+      type: string
+    BlockingType:
+      title: BlockingType
+      description: While this action is executed, how much does it block the robot.
+      enum:
+        - NONE
+        - SOFT
+        - HARD
+      type: string
+    ActionParameter:
+      title: ActionParameter
+      type: object
+      properties:
+        key:
+          title: Key
+          description: Key which must be unique among the collection of action parameters.
+          type: string
+        value:
+          title: Value
+          description: Value corresponding to the key.
+          type: string
+      required:
+        - key
+        - value
+    Action:
+      title: Action
+      type: object
+      properties:
+        actionType:
+          description: Name of the action.
+          allOf:
+            - $ref: '#/components/schemas/ActionType'
+        actionDescription:
+          title: Actiondescription
+          description: Brief description of the action.
+          type: string
+        required:
+          title: Required
+          description: Defines whether this action must be interpreted as strictly required to be performed on this node or edge.
+          default: false
+          type: boolean
+        blockingType:
+          description: Enum {NONE, SOFT, HARD}
+          allOf:
+            - $ref: '#/components/schemas/BlockingType'
+        actionParameters:
+          title: Actionparameters
+          description: Exact list of parameters and their statically JSON-object defined values which must be sent along with this action.
+          type: array
+          items:
+            $ref: '#/components/schemas/ActionParameter'
+      required:
+        - actionType
+        - blockingType
+    VehicleTypeNodeProperties:
+      title: VehicleTypeNodeProperties
+      type: object
+      properties:
+        vehicleTypeId:
+          title: Vehicletypeid
+          description: Unique identifier of the vehicle type [factsheet.manufacturer]. [factsheet.seriesName]
+          type: string
+        theta:
+          title: Theta
+          description: 'Absolute orientation of the vehicle on the node in reference to the global origin''s rotation (range: [-pi..pi]).'
+          type: number
+        actions:
+          title: Actions
+          description: Possible actions that the master controller can send for this vehicle type on this node. If no actions are possible, the attribute may be omitted.
+          type: array
+          items:
+            $ref: '#/components/schemas/Action'
+      required:
+        - vehicleTypeId
+    Node:
+      title: Node
+      type: object
+      properties:
+        nodeId:
+          title: Nodeid
+          description: Unique identifier of the node across all layouts contained in this LIF file.
+          type: string
+        nodeName:
+          title: Nodename
+          description: Name of the node (for visualization).
+          type: string
+        nodeDescription:
+          title: Nodedescription
+          description: Brief description of the node (for visualization).
+          type: string
+        mapId:
+          title: Mapid
+          description: Unique identification of the map in which the position is referenced. Each map has the same project specific global origin of coordinates.
+          type: string
+        nodePosition:
+          title: Nodeposition
+          description: Geometric location of the node.
+          allOf:
+            - $ref: '#/components/schemas/NodePosition'
+        vehicleTypeNodeProperties:
+          title: Vehicletypenodeproperties
+          description: Vehicle type specific properties for this node. JSON-object This attribute must not be empty.There must be an element for each vehicle type that may use this node.
+          minItems: 1
+          type: array
+          items:
+            $ref: '#/components/schemas/VehicleTypeNodeProperties'
+      required:
+        - nodeId
+        - mapId
+        - nodePosition
+        - vehicleTypeNodeProperties
+    OrientationType:
+      title: OrientationType
+      description: An enumeration.
+      enum:
+        - GLOBAL
+        - TANGENTIAL
+      type: string
+    AllowedRotations:
+      title: AllowedRotations
+      description: An enumeration.
+      enum:
+        - NONE
+        - CW
+        - CCW
+        - BOTH
+      type: string
+    LoadRestriction:
+      title: LoadRestriction
+      type: object
+      properties:
+        unloaded:
+          title: Unloaded
+          description: If this edge can be used by an unloaded AGV.
+          type: boolean
+        loaded:
+          title: Loaded
+          description: If this edge can be used by a loaded AGV.
+          type: boolean
+        loadSetNames:
+          title: Loadsetnames
+          description: List of load sets that may be transported by the vehicle on this edge.
+          type: array
+          items:
+            type: string
+      required:
+        - unloaded
+        - loaded
+    ControlPoint:
+      title: ControlPoint
+      type: object
+      properties:
+        x:
+          title: X
+          description: X position on the layout in reference to the global origin.
+          type: number
+        'y':
+          title: 'Y'
+          description: Y position on the layout in reference to the global origin.
+          type: number
+        weight:
+          title: Weight
+          description: The weight with which this control point pulls on the curve.
+          default: 1
+          type: number
+      required:
+        - x
+        - 'y'
+    Trajectory:
+      title: Trajectory
+      type: object
+      properties:
+        degree:
+          title: Degree
+          description: Defines the number of control points that influence any given point on the curve. Increasing the degree increases continuity.
+          default: 1
+          type: number
+        knotVector:
+          title: Knotvector
+          description: Sequence of parameter values that determines where and how the control points affect the NURBS curve (range [0..1]).
+          type: array
+          items:
+            type: number
+        controlPoints:
+          title: Controlpoints
+          description: Control points of the NURBS, which includes the beginning and end point
+          type: array
+          items:
+            $ref: '#/components/schemas/ControlPoint'
+      required:
+        - knotVector
+        - controlPoints
+    VehicleTypeEdgeProperties:
+      title: VehicleTypeEdgeProperties
+      type: object
+      properties:
+        vehicleTypeId:
+          title: Vehicletypeid
+          description: Unique identifier of the vehicle type [factsheet.manufacturer]. [factsheet.seriesName]
+          type: string
+        vehicleOrientation:
+          title: Vehicleorientation
+          description: Orientation of the vehicle on the edge in radian. The value `orientationType` defines if it has to be interpreted relative to the global project specific map coordinate system or tangential to the edge. In case of interpreted tangential to the edge 0.0=forwards and PI=backwards.
+          type: number
+        orientationType:
+          description: '`GLOBAL`: relative to the global project specific map coordinate system. `TANGENTIAL` (default): tangential to the edge. Defaults to `TANGENTIAL`.'
+          default: TANGENTIAL
+          allOf:
+            - $ref: '#/components/schemas/OrientationType'
+        rotationAllowed:
+          title: Rotationallowed
+          description: If the AGV can rotate on the edge.
+          type: boolean
+        rotationAtStartNodeAllowed:
+          description: 'Allowed directions of rotation for the vehicle at the start node. `NONE`: Rotation not allowed. `CCW`: Counter clockwise (positive). `CW`: Clockwise (negative). `BOTH` (default): Both directions.'
+          default: BOTH
+          allOf:
+            - $ref: '#/components/schemas/AllowedRotations'
+        rotationAtEndNodeAllowed:
+          description: 'Allowed directions of rotation for the vehicle at the start node. `NONE`: Rotation not allowed. `CCW`: Counter clockwise (positive). `CW`: Clockwise (negative). `BOTH` (default): Both directions.'
+          default: BOTH
+          allOf:
+            - $ref: '#/components/schemas/AllowedRotations'
+        maxSpeed:
+          title: Maxspeed
+          description: Permitted maximum speed on the edge in m/sec. Speed is defined by the fastest measurement of the vehicle.
+          type: number
+        maxRotationSpeed:
+          title: Maxrotationspeed
+          description: Maximum rotation speed.
+          type: number
+        minHeight:
+          title: Minheight
+          description: Permitted minimal height in meter of the load handling device on the edge.
+          type: number
+        maxHeight:
+          title: Maxheight
+          description: Permitted maximum height of the vehicle, including the load, on edge.
+          type: number
+        loadRestriction:
+          title: Loadrestriction
+          description: Describes the load restriction on this edge for a vehicle of the corresponding vehicleTypeId.
+          allOf:
+            - $ref: '#/components/schemas/LoadRestriction'
+        actions:
+          title: Actions
+          description: Possible actions that the master controller can send for this vehicle type on this node. If no actions are possible, the attribute may be omitted.
+          type: array
+          items:
+            $ref: '#/components/schemas/Action'
+        trajectory:
+          title: Trajectory
+          description: Defines the curve on which the vehicle should move between startNode and endNode.
+          allOf:
+            - $ref: '#/components/schemas/Trajectory'
+        reentryAllowed:
+          title: Reentryallowed
+          description: If AGVs can enter automatic management on this edge.
+          default: true
+          type: boolean
+      required:
+        - vehicleTypeId
+        - rotationAllowed
+    Edge:
+      title: Edge
+      type: object
+      properties:
+        edgeId:
+          title: Edgeid
+          description: Unique identifier of the edge across all layouts within this LIF file.
+          type: string
+        edgeName:
+          title: Edgename
+          description: Name of the edge (for visualization).
+          type: string
+        edgeDescription:
+          title: Edgedescription
+          description: Brief description of the edge (for visualization).
+          type: string
+        startNodeId:
+          title: Startnodeid
+          description: Id of the start node. The start node must always be part of the current layout.
+          type: string
+        endNodeId:
+          title: Endnodeid
+          description: Id of the end node. The end node can be located in another layout. This models a transition from one layout to another.
+          type: string
+        vehicleTypeEdgeProperties:
+          title: Vehicletypeedgeproperties
+          description: Vehicle type specific properties for this edge. This attribute must not be empty. For each allowed vehicle type there must be an element.
+          minItems: 1
+          type: array
+          items:
+            $ref: '#/components/schemas/VehicleTypeEdgeProperties'
+      required:
+        - edgeId
+        - startNodeId
+        - endNodeId
+        - vehicleTypeEdgeProperties
+    StationPosition:
+      title: StationPosition
+      type: object
+      properties:
+        x:
+          title: X
+          description: X position on the layout in reference to the global origin.
+          type: number
+        'y':
+          title: 'Y'
+          description: Y position on the layout in reference to the global origin.
+          type: number
+        theta:
+          title: Theta
+          description: 'Absolute orientation of the station on the node (range: [-pi..pi]).'
+          type: number
+      required:
+        - x
+        - 'y'
+        - theta
+    Station:
+      title: Station
+      type: object
+      properties:
+        stationId:
+          title: Stationid
+          description: Unique identifier of the station across all layouts within this LIF file.
+          type: string
+        interactionNodeIds:
+          title: Interactionnodeids
+          description: List of `nodeIds` for this station.
+          minItems: 1
+          type: array
+          items:
+            type: string
+        stationName:
+          title: Stationname
+          description: Human-readable name for the station (for visualization).
+          type: string
+        stationDescription:
+          title: Stationdescription
+          description: Brief description of the station.
+          type: string
+        stationHeight:
+          title: Stationheight
+          description: Absolute physical height of the station in meter.
+          type: number
+        stationPosition:
+          title: Stationposition
+          description: Center point and orientation of the station.
+          allOf:
+            - $ref: '#/components/schemas/StationPosition'
+      required:
+        - stationId
+        - interactionNodeIds
+    Layout:
+      title: Layout
+      type: object
+      properties:
+        layoutId:
+          title: Layoutid
+          description: Unique identifier for this layout.
+          type: string
+        layoutName:
+          title: Layoutname
+          description: Human-readable name of the layout (e.g., for displaying).
+          type: string
+        layoutVersion:
+          title: Layoutversion
+          description: Version of the layout (suggested to be an increasing integer).
+          type: string
+        layoutLevelId:
+          title: Layoutlevelid
+          description: This attribute can be used to explicitly indicate which level or floor within a building or buildings a layout represents in a situation where there are multiple, such as multiple levels in the same facility, or two disconnected areas in the same facility.
+          type: string
+        layoutDescription:
+          title: Layoutdescription
+          description: Brief description of the layout.
+          type: string
+        nodes:
+          title: Nodes
+          description: Collection of all nodes in the layout.
+          type: array
+          items:
+            $ref: '#/components/schemas/Node'
+        edges:
+          title: Edges
+          description: Collection of all edges in the layout.
+          type: array
+          items:
+            $ref: '#/components/schemas/Edge'
+        stations:
+          title: Stations
+          description: Collection of all stations in the layout.
+          type: array
+          items:
+            $ref: '#/components/schemas/Station'
+      required:
+        - layoutId
+        - layoutVersion
+        - nodes
+        - edges
+        - stations
+    LIFStructure:
+      title: LIFStructure
+      type: object
+      properties:
+        metaInformation:
+          $ref: '#/components/schemas/MetaInformation'
+        layouts:
+          title: Layouts
+          type: array
+          items:
+            $ref: '#/components/schemas/Layout'
+      required:
+        - metaInformation
+        - layouts
+    VertexCategory:
+      title: VertexCategory
+      description: Enumeration of the different vertex categories found in a Topological Graph.
+      enum:
+        - approach
+        - compartment
+        - charger
+        - dock
+      type: string
+    VdaNode:
+      title: VdaNode
+      description: A node of the topological graph.
+      type: object
+      properties:
+        id:
+          title: Id
+          description: The name of the node.
+          type: string
+        category:
+          description: The category of the node. Can be a compartment, dock, charger, approach.
+          allOf:
+            - $ref: '#/components/schemas/VertexCategory'
+        x:
+          title: X
+          description: The x coordinate of the node.
+          type: number
+        'y':
+          title: 'Y'
+          description: The y coordinate of the node.
+          type: number
+        fence_radius:
+          title: Fence Radius
+          description: The fence radius of the node in meter.
+          type: number
+      required:
+        - id
+        - category
+        - x
+        - 'y'
+        - fence_radius
+    VdaEdge:
+      title: VdaEdge
+      description: Directed edge of the topological graph.
+      type: object
+      properties:
+        id:
+          title: Id
+          description: The name of the edge.
+          type: string
+        start_node_id:
+          title: Start Node Id
+          description: The name of the source node.
+          type: string
+        end_node_id:
+          title: End Node Id
+          description: The name of the target node.
+          type: string
+        navigation_method:
+          title: Navigation Method
+          description: Navigation method of the edge.
+          type: string
+        fence_left:
+          title: Fence Left
+          description: Distance from the edge to the left fence border (in edge direction).
+          type: number
+        fence_right:
+          title: Fence Right
+          description: Distance from the edge to the right fence border (in edge direction).
+          type: number
+      required:
+        - id
+        - start_node_id
+        - end_node_id
+        - navigation_method
+        - fence_left
+        - fence_right
+    AdapterType:
+      title: AdapterType
+      description: An enumeration.
+      enum:
+        - flat
+        - pickup
+        - putdown
+      type: string
+    VdaStation:
+      title: VdaStation
+      description: Describes a compartment of a handover station.
+      type: object
+      properties:
+        id:
+          title: Id
+          description: Name and barcode of the adapter on the compartment.
+          type: string
+        node_id:
+          title: Node Id
+          description: Name of the dock vertex that is linked to the handover.
+          type: string
+        x:
+          title: X
+          description: Absolute x-coordinate of the center of the compartment.
+          type: number
+        'y':
+          title: 'Y'
+          description: Absolute y-coordinate of the center of the compartment.
+          type: number
+        z:
+          title: Z
+          description: Height of the front of the compartment (at the pole).
+          type: number
+        layer_x:
+          title: Layer X
+          description: distance from the layer center in meter
+          type: number
+        length:
+          title: Length
+          description: Length of the compartment (front).
+          type: number
+        width:
+          title: Width
+          description: Width of the compartment (depth).
+          type: number
+        height:
+          title: Height
+          description: Height of the compartment.
+          type: number
+        type:
+          description: Type of compartment (pickup, putdown, flat).
+          allOf:
+            - $ref: '#/components/schemas/AdapterType'
+      required:
+        - id
+        - node_id
+        - x
+        - 'y'
+        - z
+        - layer_x
+        - length
+        - width
+        - height
+        - type
+    VdaStationGroup:
+      title: VdaStationGroup
+      description: Describes a handover station.
+      type: object
+      properties:
+        id:
+          title: Id
+          description: Name of the handover station.
+          type: string
+        stations:
+          title: Stations
+          description: List of compartments in the handover station.
+          type: array
+          items:
+            $ref: '#/components/schemas/VdaStation'
+        x:
+          title: X
+          description: x-coordinate of the center of the handover station.
+          type: number
+        'y':
+          title: 'Y'
+          description: y-coordinate of the center of the handover station.
+          type: number
+        yaw:
+          title: Yaw
+          description: Counter-clockwise rotation of the compartment in radian.
+          type: number
+        return_sink:
+          title: Return Sink
+          description: True if the group acts as a return sink.
+          type: boolean
+        docking_modes:
+          title: Docking Modes
+          description: Mapping of docking mode to relative target orientation.
+          type: object
+          additionalProperties:
+            type: number
+        docking_area_name:
+          title: Docking Area Name
+          description: Name of the docking area.
+          type: string
+        length:
+          title: Length
+          description: Length of handover station in meter.
+          type: number
+        width:
+          title: Width
+          description: Width of handover station in meter.
+          type: number
+      required:
+        - id
+        - stations
+        - x
+        - 'y'
+        - yaw
+        - return_sink
+        - docking_modes
+        - docking_area_name
+        - length
+        - width
+    VdaCharger:
+      title: VdaCharger
+      description: Describes a charging station.
+      type: object
+      properties:
+        id:
+          title: Id
+          description: Name of the charging station.
+          type: string
+        node_id:
+          title: Node Id
+          description: Name of the charger vertex that is linked to the charging station.
+          type: string
+        x:
+          title: X
+          description: x-coordinate of the center of the charging station.
+          type: number
+        'y':
+          title: 'Y'
+          description: y-coordinate of the center of the charging station.
+          type: number
+        yaw:
+          title: Yaw
+          description: Counter-clockwise rotation of the charger in radian.
+          type: number
+        docking_modes:
+          title: Docking Modes
+          description: Mapping of docking mode to relative target orientation.
+          type: object
+          additionalProperties:
+            type: number
+      required:
+        - id
+        - node_id
+        - x
+        - 'y'
+        - yaw
+        - docking_modes
+    VdaParkingSpace:
+      title: VdaParkingSpace
+      description: Describes a parking space.
+      type: object
+      properties:
+        id:
+          title: Id
+          description: Name of the parking space.
+          type: string
+        node_id:
+          title: Node Id
+          description: Name of the vertex that is linked to the parking space.
+          type: string
+        x:
+          title: X
+          description: x-coordinate of the center of the parking space.
+          type: number
+        'y':
+          title: 'Y'
+          description: y-coordinate of the center of the parking space.
+          type: number
+        yaw:
+          title: Yaw
+          description: Counter-clockwise rotation of the parking space in radian.
+          type: number
+      required:
+        - id
+        - node_id
+        - x
+        - 'y'
+        - yaw
+    VdaEnvironment:
+      title: VdaEnvironment
+      description: |-
+        Describes a generic environment model with graph, stations, chargers and parking spaces.
+
+        - distances are in meter
+        - angles are in radian
+        - the coordinate system is right-handed
+      type: object
+      properties:
+        id:
+          title: Id
+          description: Unique identifier for this map (deployment UUID).
+          type: string
+        nodes:
+          title: Nodes
+          description: The nodes of the topological graph.
+          type: array
+          items:
+            $ref: '#/components/schemas/VdaNode'
+        edges:
+          title: Edges
+          description: The edges of the topological graph.
+          type: array
+          items:
+            $ref: '#/components/schemas/VdaEdge'
+        station_groups:
+          title: Station Groups
+          description: The shelves with compartments (Station).
+          type: array
+          items:
+            $ref: '#/components/schemas/VdaStationGroup'
+        chargers:
+          title: Chargers
+          description: The chargers for the AGVs.
+          type: array
+          items:
+            $ref: '#/components/schemas/VdaCharger'
+        parking_spaces:
+          title: Parking Spaces
+          description: The parking spaces for the AGVs.
+          type: array
+          items:
+            $ref: '#/components/schemas/VdaParkingSpace'
+        metadata:
+          title: Metadata
+          description: Metadata about the map, like software versions and linked files.
+          type: object
+      required:
+        - id
+        - nodes
+        - edges
+        - station_groups
+
