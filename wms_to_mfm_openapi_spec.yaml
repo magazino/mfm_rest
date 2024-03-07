@@ -151,7 +151,7 @@ components:
       type: object
   
 paths:
-  /api/wms/orders:
+  /api/v1/wms/orders:
     post:
       description: |- 
         Create a new order to be dispatched by MFM.  
@@ -247,7 +247,7 @@ paths:
       summary: Create an Order. (Required)
       tags:
       - Orders
-  /api/wms/orders/{order_id}/requests/{request_id}/cancel:
+  /api/v1/wms/orders/{order_id}/requests/{request_id}/cancel:
     put:
       description: |-
         Cancel a Request of an order that has not been started yet.
@@ -299,7 +299,7 @@ paths:
       summary: Cancel a Request
       tags:
       - Orders
-  /api/wms/orders/{order_id}:
+  /api/v1/wms/orders/{order_id}:
     put:
       description: |-
         Update an order by passing the order_id and the updated order. Updates must not contain the full order, 
@@ -429,7 +429,7 @@ paths:
       summary: Update an Order
       tags:
       - Orders
-  /api/wms/orders/{order_id}/cancel:
+  /api/v1/wms/orders/{order_id}/cancel:
     put:
       description: |-
         Update the requests of an order by passing an updated order. 
@@ -474,7 +474,7 @@ paths:
       summary: Cancel an Order
       tags:
       - Orders
-  /api/world/compartments:
+  /api/v1/world/compartments:
     get:
       description: |-
         Get the compartments in the current environments. 
