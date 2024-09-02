@@ -16,6 +16,21 @@ components:
             title: Station Name
             type: string
             example: HandoverStation-1
+          length:
+            description: Length in meter (m). Has to be greater than width.
+            minimum: 0.3
+            title: Length
+            type: number
+          width:
+            description: Width in meter (m). Has to be smaller than length.
+            minimum: 0.2
+            title: Width
+            type: number
+          height:
+            description: Height in meter (m).
+            minimum: 0.08
+            title: Height
+            type: number
         required:
         - name
         title: Container
