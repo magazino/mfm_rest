@@ -86,7 +86,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/DeploymentOutSchema'
         '404':
-          description: Not Found
+          description: Error
           content:
             application/json:
               schema:
@@ -107,6 +107,59 @@ paths:
             "timestamp_updated": 1623922297.390304
         }
         ```
+  /api/public/v1/environments:
+    get:
+      operationId: environment_editor_backend_api_endpoints_environments_api_public_get_or_generate_environment
+      summary: Get the Environment for a project version.
+      parameters:
+        - in: query
+          name: project_id
+          schema:
+            title: Project Id
+            type: string
+          required: true
+        - in: query
+          name: version
+          schema:
+            title: Version
+            type: string
+          required: true
+        - in: query
+          name: filter_large_files
+          schema:
+            title: Filter Large Files
+            default: true
+            type: boolean
+          required: false
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                title: Response
+        '400':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FailureResponse'
+        '404':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FailureResponse'
+      description: |-
+        Returns the generated Environment files for project version.
+
+        If no Deployment for the project version exists, it is created and the environment
+        is generated on-the-fly.
+
+        Returns
+            200: ZIP with all environment artifacts.
+            400: Failure response as environment generation failed.
+            400: Failure response as project version does not exist.
   /api/public/v1/environments/{deployment_id}:
     get:
       operationId: environment_editor_backend_api_endpoints_environments_api_public_get_environment
@@ -128,8 +181,18 @@ paths:
       responses:
         '200':
           description: OK
+          content:
+            application/json:
+              schema:
+                title: Response
+        '404':
+          description: Error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FailureResponse'
       description: |-
-        Returns the generated Environment files for a successfull Deployment.
+        Returns the generated Environment files for a successful Deployment.
 
         Returns: environment.zip with all files as raw bytes
   /api/public/v1/lif-structures/{deployment_id}:
@@ -151,19 +214,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/LIFStructure'
         '400':
-          description: Bad Request
+          description: Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/FailureResponse'
         '404':
-          description: Not Found
+          description: Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/FailureResponse'
         '500':
-          description: Internal Server Error
+          description: Error
           content:
             application/json:
               schema:
@@ -189,13 +252,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/VdaEnvironment'
         '404':
-          description: Not Found
+          description: Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/FailureResponse'
         '500':
-          description: Internal Server Error
+          description: Error
           content:
             application/json:
               schema:
@@ -225,19 +288,19 @@ paths:
               schema:
                 $ref: '#/components/schemas/VdaEnvironment'
         '400':
-          description: Bad Request
+          description: Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/FailureResponse'
         '404':
-          description: Not Found
+          description: Error
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/FailureResponse'
         '500':
-          description: Internal Server Error
+          description: Error
           content:
             application/json:
               schema:
@@ -357,10 +420,11 @@ components:
         - map_folder_already_exists
         - map_folder_does_not_exist
         - missing_map_file
-        - unexpected_error
         - environment_upload_invalid_format
         - environment_upload_invalid_structure
         - environment_upload_error
+        - environment_missing_file
+        - unexpected_error
       type: string
     FailureResponse:
       title: FailureResponse
@@ -392,7 +456,7 @@ components:
         lifVersion:
           title: Lifversion
           description: 'Version of LIF: [Major].[Minor].[Patch] (0.10.0).'
-          default: 0.10.0
+          default: 1.0.0
           type: string
       required:
         - projectIdentification
@@ -452,6 +516,14 @@ components:
         - switchSensorMode
         - goToPosition
       type: string
+    RequirementType:
+      title: RequirementType
+      description: An enumeration.
+      enum:
+        - REQUIRED
+        - CONDITIONAL
+        - OPTIONAL
+      type: string
     BlockingType:
       title: BlockingType
       description: While this action is executed, how much does it block the robot.
@@ -487,11 +559,17 @@ components:
           title: Actiondescription
           description: Brief description of the action.
           type: string
-        required:
-          title: Required
-          description: Defines whether this action must be interpreted as strictly required to be performed on this node or edge.
+        requirementType:
+          description: |2-
+
+                        `REQUIRED` - The (third-party) master control system must always communicate this action to the vehicle on this node or edge.
+                        `CONDITIONAL` - The action may or may not be required contingent upon various factors as discussed with the vehicle integrator.
+                        `OPTIONAL` - The action may or may not be communicated to the vehicle at the (third-party) master control system's discretion and responsibility.
+                        The vehicle must be able to execute without issue if OPTIONAL actions are never, sometimes, or always sent to it.
+                        
           default: false
-          type: boolean
+          allOf:
+            - $ref: '#/components/schemas/RequirementType'
         blockingType:
           description: Enum {NONE, SOFT, HARD}
           allOf:
@@ -875,6 +953,8 @@ components:
         - compartment
         - charger
         - dock
+        - elevator
+        - home
       type: string
     VdaNode:
       title: VdaNode
@@ -901,12 +981,17 @@ components:
           title: Fence Radius
           description: The fence radius of the node in meter.
           type: number
+        floor:
+          title: Floor
+          description: The floor id the node is on.
+          type: string
       required:
         - id
         - category
         - x
         - 'y'
         - fence_radius
+        - floor
     VdaEdge:
       title: VdaEdge
       description: Directed edge of the topological graph.
@@ -936,6 +1021,10 @@ components:
           title: Fence Right
           description: Distance from the edge to the right fence border (in edge direction).
           type: number
+        floor:
+          title: Floor
+          default: Floor id the edge belongs to.
+          type: string
       required:
         - id
         - start_node_id
@@ -1136,6 +1225,24 @@ components:
         - x
         - 'y'
         - yaw
+    VdaExclusiveArea:
+      title: VdaExclusiveArea
+      description: Describes an exclusive area.
+      type: object
+      properties:
+        id:
+          title: Id
+          description: Name of the exclusive area.
+          type: string
+        node_ids:
+          title: Node Ids
+          description: Node ids that are members of the exclusive area.
+          type: array
+          items:
+            type: string
+      required:
+        - id
+        - node_ids
     VdaEnvironment:
       title: VdaEnvironment
       description: |-
@@ -1144,6 +1251,8 @@ components:
         - distances are in meter
         - angles are in radian
         - the coordinate system is right-handed
+
+        - An environment consists of one or more floors
       type: object
       properties:
         id:
@@ -1180,6 +1289,12 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/VdaParkingSpace'
+        exclusive_areas:
+          title: Exclusive Areas
+          description: Mapping from exclusive areas to the nodes they contain.
+          type: array
+          items:
+            $ref: '#/components/schemas/VdaExclusiveArea'
         metadata:
           title: Metadata
           description: Metadata about the map, like software versions and linked files.
@@ -1189,4 +1304,3 @@ components:
         - nodes
         - edges
         - station_groups
-
