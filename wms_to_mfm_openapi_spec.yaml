@@ -455,8 +455,8 @@ paths:
   /api/v1/wms/orders/{order_id}/cancel:
     put:
       description: |-
-        Update the requests of an order by passing an updated order.
-        Only requests which are not started or terminated yet will be updated.
+        Cancel an order by passing the order_id.
+        Only orders that have not been started yet can be canceled.
 
         - 200: Order was canceled
         - 400: Order was not canceled (already terminated, assigned to a robot...)
