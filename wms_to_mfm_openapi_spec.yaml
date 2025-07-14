@@ -170,6 +170,33 @@ components:
       - target
       title: Request
       type: object
+    RequestStatus:
+      description: >-
+        Describes the status of a request.
+      properties:
+        custom_fields:
+            $ref: '#/components/schemas/CustomFields'
+        order_id:
+          description: Unique identifier of an Order.
+          title: Order Id
+          type: string
+          example: ORDER_01
+        request_id:
+          description: Unique identifier of a Request.
+          title: Request Id
+          type: string
+          example: REQUEST_01
+        status:
+          title: Status
+          description: Status of the request (created, started, grasped, picked, completed, aborted)
+          type: string
+          example: "created"
+      required:
+      - order_id
+      - request_id
+      - status
+      title: RequestStatus
+      type: object
 
 paths:
   /api/v1/wms/orders:
@@ -268,6 +295,100 @@ paths:
           description: Error
 
       summary: Create an Order. (Required)
+      tags:
+      - Orders
+  /api/v1/wms/requests:
+    get:
+      description: |-
+        Return a list of request status which are still open for the robot, or were teriminated by the robot, and need to be cleared by the WMS (cf. POST /clear endpoint).
+
+        A request status is composed of:
+
+        - an order_id
+        - an request_id
+        - a request state (created, started, grasped, picked, completed, aborted)
+
+        Response:
+        - 200
+      operationId: mfm_rest_api_wms_api_order_requests_status
+      parameters: []
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/RequestStatus'
+              examples:
+                RequestStatusList:
+                  value:
+                    - order_id: "ORDER_01"
+                      request_id: "REQUEST_01"
+                      status: "picked"
+                    - order_id: "ORDER_01"
+                      request_id: "REQUEST_02"
+                      status: "completed"
+                    - order_id: "ORDER_03"
+                      request_id: "REQUEST_01"
+                      status: "finished"
+                      custom_fields:
+                        customKey: customValue
+
+      summary: Get request status
+      tags:
+      - Orders
+  /api/v1/wms/orders/{order_id}/requests/{request_id}/clear:
+    put:
+      description: |-
+        Clear a Request of an order that has been finished (status completed or aborted). Once the request is cleared, it will not appear anymore in the GET /request endpoint: Magazino will assume that the request is now handled by the WMS.
+
+        Responses:
+        - 200: Request was cleared
+        - 400: Request was already cleared (request is unterminated)
+        - 404: unknown order_id and/or request_id
+      operationId: mfm_rest_api_wms_api_request_clear_request
+      parameters:
+      - in: path
+        name: order_id
+        required: true
+        schema:
+          title: Order Id
+          type: string
+      - in: path
+        name: request_id
+        required: true
+        schema:
+          title: Request Id
+          type: string
+      responses:
+        200:
+          description: OK
+        400:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FailureResponse'
+              examples:
+                Request started:
+                  value:
+                    error: "Request has already been started."
+                    id: "example_error_id"
+          description: Error
+
+        404:
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FailureResponse'
+              examples:
+                Order not found:
+                  value:
+                    error: "Fail to cancel request of order ORDER_03 because its id is unknown."
+                    id: "example_error_id"
+          description: Error, request not found
+      summary: Clear a Request
       tags:
       - Orders
   /api/v1/wms/orders/{order_id}/requests/{request_id}/cancel:
