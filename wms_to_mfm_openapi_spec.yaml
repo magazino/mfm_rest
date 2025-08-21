@@ -90,44 +90,28 @@ components:
       type: object
       description: >-
         An Order is composed of a list of `Requests` and a priority.
-        All Requests in an Order are part of the same process (e.g.: Delivery, Return).
-        Process types are used to distinguish diffent parts of a warehouse process.
-        E.g: Delivery denotes material delivery to a workstation, while return denotes the return of
-        an empty box to a central storage.
-        This is a concept definition from Magazino, it can differ from that of the client''s WMS.
       properties:
         order_id:
           title: Order id
           type: string
           description: Unique identifier of the order
           example: ORDER_01
-        priority:
-          title: Priority
-          type: integer
-          minimum: 1
-          description: Priority for the order to be batched. Lower numbers mean higher priority.
-          example: 2
         requests:
           type: array
           items:
             $ref: '#/components/schemas/Request'
           minItems: 1
+        priority:
+          title: Priority
+          type: integer
+          minimum: 1
+          description: Priority for the order to be batched. Lower numbers mean higher priority. Defaults to 1.
+          example: 2
         custom_fields:
             $ref: '#/components/schemas/CustomFields'
-        process_type:
-          title: Process Type
-          type: string
-          description: >-
-            Process type for all Requests in the Order (delivery, return).
-            Process types are used to distinguish diffent parts of a warehouse process.
-            E.g: Delivery denotes material delivery to a workstation, while return denotes the return of
-            empty boxes to a central storage.
-          example: delivery
       required:
         - order_id
-        - priority
         - requests
-        - process_type
       additionalProperties: false
     Request:
       description: >-
@@ -158,6 +142,18 @@ components:
           - $ref: '#/components/schemas/Container'
           description: Container where an AGV has to place the item picked from source.
           title: Target
+        process_type:
+          title: Process Type
+          type: string
+          description: >-
+            Process type for a Request (delivery, return).
+            Process types are used to distinguish different parts of a warehouse process.
+            E.g: Delivery denotes material delivery to a workstation, while return denotes the return of
+            empty boxes to a central storage.
+
+            Process types can be mixed within an order.
+            This is a concept definition from Magazino, it can differ from that of the clients WMS.
+          example: delivery
         sequence_nb:
           title: Sequence number
           description: Describes in which sequence the robot has to pick the items of that order.
@@ -168,6 +164,7 @@ components:
       - item
       - source
       - target
+      - process_type
       title: Request
       type: object
     RequestStatus:
@@ -208,7 +205,6 @@ paths:
         - an order_id
         - a priority
         - a list of Requests
-        - a process_type
 
         Responses:
         - 201: the order was created
@@ -226,7 +222,6 @@ paths:
                 value:
                   order_id: "ORDER_01"
                   priority: 2
-                  process_type: "delivery"
                   requests:
                     - request_id: "REQUEST_01"
                       item:
@@ -238,6 +233,7 @@ paths:
                         name: "HandoverStation-1-1-1"
                       target:
                         name: "HandoverStation-2-1-2"
+                      process_type: "delivery"
               Order Creation Example 2 (Sequence specified):
                 description: |-
                   This order contains two items that need to be picked in a specific sequence.
@@ -245,7 +241,6 @@ paths:
                 value:
                   order_id: "ORDER_02"
                   priority: 2
-                  process_type: "return"
                   custom_fields:
                     properties:
                       is_announced: "true"
@@ -262,6 +257,7 @@ paths:
                       target:
                         name: "HandoverStation-3-2-1"
                         station_name: "HandoverStation-3"
+                      process_type: "return"
                       sequence_nb: 2
                     - request_id: "REQUEST_02"
                       item:
@@ -275,6 +271,7 @@ paths:
                       target:
                         name: "HandoverStation-2-1-2"
                         station_name: "HandoverStation-2"
+                      process_type: "return"
                       sequence_nb: 1
 
 
@@ -300,7 +297,7 @@ paths:
   /api/v1/wms/requests:
     get:
       description: |-
-        Return a list of request status which are still open for the robot, or were teriminated by the robot, and need to be cleared by the WMS (cf. POST /clear endpoint).
+        Return a list of request status which are still open for the robot or were terminated by the robot and need to be cleared by the WMS (cf. POST /clear endpoint).
 
         A request status is composed of:
 
@@ -475,7 +472,6 @@ paths:
                 value:
                   order_id: "ORDER_01"
                   priority: 2
-                  process_type: "delivery"
                   custom_fields:
                     properties:
                       is_announced: "true"
@@ -492,6 +488,7 @@ paths:
                       target:
                         name: "HandoverStation-3-3-3"
                         station_name: "HandoverStation-3"
+                      process_type: "delivery"
               Order Update Example 2 (Order Parameters):
                 description: >-
                   This order update changes the order parameters for ORDER_01 as defined in the examples
@@ -499,7 +496,6 @@ paths:
                 value:
                   order_id: "ORDER_01"
                   priority: 1
-                  process_type: "delivery"
                   custom_fields:
                     properties:
                       is_announced: "true"
@@ -517,6 +513,7 @@ paths:
                       target:
                         name: "HandoverStation-2-1-2"
                         station_name: "HandoverStation-2"
+                      process_type: "delivery"
               Order Update Example 3 (Request Extension):
                 description: >-
                   This order update adds a request to ORDER_01 as defined in the examples for the
@@ -526,7 +523,6 @@ paths:
                 value:
                   order_id: "ORDER_01"
                   priority: 2
-                  process_type: "delivery"
                   custom_fields:
                     properties:
                       is_announced: "true"
@@ -543,6 +539,7 @@ paths:
                       target:
                         name: "HandoverStation-3-3-2"
                         station_name: "HandoverStation-3"
+                      process_type: "delivery"
                       sequence_nb: 1
       responses:
         200:
