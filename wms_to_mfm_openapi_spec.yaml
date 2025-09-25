@@ -188,10 +188,16 @@ components:
           description: Status of the request (created, started, grasped, picked, completed, aborted)
           type: string
           example: "created"
+        current_item_container:
+          title: Current item position
+          description: Current position of the item in the warehouse.
+          type: string
+          example: "HandoverStation-2-1-2"
       required:
       - order_id
       - request_id
       - status
+      - current_item_container
       title: RequestStatus
       type: object
 
@@ -324,12 +330,15 @@ paths:
                     - order_id: "ORDER_01"
                       request_id: "REQUEST_01"
                       status: "picked"
+                      current_item_container: "soto-0001"
                     - order_id: "ORDER_01"
                       request_id: "REQUEST_02"
                       status: "completed"
+                      current_item_container: "HandoverStation-3"
                     - order_id: "ORDER_03"
                       request_id: "REQUEST_01"
-                      status: "finished"
+                      status: "completed"
+                      current_item_container: "HandoverStation-3"
                       custom_fields:
                         customKey: customValue
 
