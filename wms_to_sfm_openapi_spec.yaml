@@ -1,40 +1,40 @@
 openapi: 3.0.2
 info:
-  description: This document details the OpenAPI specification for the Magazino Fleet Manager (MFM).
-  title: MFM REST API
+  description: This document details the OpenAPI specification for the SOTO Fleet Manager (SFM).
+  title: SFM REST API
   version: 1.0.0
 components:
   schemas:
     Container:
-        description: Any place that can contain items (can be a pick-up or drop-off station).
-        properties:
-          name:
-            title: Name
-            type: string
-            example: HandoverStation-1-1-1
-          station_name:
-            title: Station Name
-            type: string
-            example: HandoverStation-1
-          length:
-            description: Length in meter (m). Has to be greater than width.
-            minimum: 0.3
-            title: Length
-            type: number
-          width:
-            description: Width in meter (m). Has to be smaller than length.
-            minimum: 0.2
-            title: Width
-            type: number
-          height:
-            description: Height in meter (m).
-            minimum: 0.08
-            title: Height
-            type: number
-        required:
+      description: Any place that can contain items (can be a pick-up or drop-off station).
+      properties:
+        name:
+          title: Name
+          type: string
+          example: HandoverStation-1-1-1
+        station_name:
+          title: Station Name
+          type: string
+          example: HandoverStation-1
+        length:
+          description: Length in meter (m). Has to be greater than width.
+          minimum: 0.3
+          title: Length
+          type: number
+        width:
+          description: Width in meter (m). Has to be smaller than length.
+          minimum: 0.2
+          title: Width
+          type: number
+        height:
+          description: Height in meter (m).
+          minimum: 0.08
+          title: Height
+          type: number
+      required:
         - name
-        title: Container
-        type: object
+      title: Container
+      type: object
     CustomFields:
       description: >-
         A key value storage for additional parameters (e.g. is_announced to announce orders).
@@ -49,17 +49,18 @@ components:
           title: Error
           type: string
         id:
-          description: Identifier of the resource related to the failure (request_id,
+          description:
+            Identifier of the resource related to the failure (request_id,
             order_id).
           title: Id
           type: string
       required:
-      - id
-      - error
+        - id
+        - error
       title: FailureResponse
       type: object
     Item:
-      description: 'Item to be moved by an AGV.'
+      description: "Item to be moved by an AGV."
       properties:
         item_id:
           description: Unique identifier of the item (can be the barcode).
@@ -81,9 +82,9 @@ components:
           title: Height
           type: number
       required:
-      - item_id
-      - length
-      - width
+        - item_id
+        - length
+        - width
       title: Item
       type: object
     Order:
@@ -99,7 +100,7 @@ components:
         requests:
           type: array
           items:
-            $ref: '#/components/schemas/Request'
+            $ref: "#/components/schemas/Request"
           minItems: 1
         priority:
           title: Priority
@@ -108,7 +109,7 @@ components:
           description: Priority for the order to be batched. Lower numbers mean higher priority. Defaults to 1.
           example: 2
         custom_fields:
-            $ref: '#/components/schemas/CustomFields'
+          $ref: "#/components/schemas/CustomFields"
       required:
         - order_id
         - requests
@@ -120,10 +121,10 @@ components:
         which will be accessible in the RequestStatus.'
       properties:
         custom_fields:
-            $ref: '#/components/schemas/CustomFields'
+          $ref: "#/components/schemas/CustomFields"
         item:
           allOf:
-          - $ref: '#/components/schemas/Item'
+            - $ref: "#/components/schemas/Item"
           description: Item to move from source to target.
           title: Item
           example: KLT-001
@@ -134,12 +135,12 @@ components:
           example: REQUEST_01
         source:
           allOf:
-          - $ref: '#/components/schemas/Container'
+            - $ref: "#/components/schemas/Container"
           description: Container where an AGV can find the item to move.
           title: Source
         target:
           allOf:
-          - $ref: '#/components/schemas/Container'
+            - $ref: "#/components/schemas/Container"
           description: Container where an AGV has to place the item picked from source.
           title: Target
         process_type:
@@ -160,11 +161,11 @@ components:
           type: integer
           example: 1
       required:
-      - request_id
-      - item
-      - source
-      - target
-      - process_type
+        - request_id
+        - item
+        - source
+        - target
+        - process_type
       title: Request
       type: object
     RequestStatus:
@@ -172,7 +173,7 @@ components:
         Describes the status of a request.
       properties:
         custom_fields:
-            $ref: '#/components/schemas/CustomFields'
+          $ref: "#/components/schemas/CustomFields"
         order_id:
           description: Unique identifier of an Order.
           title: Order Id
@@ -194,10 +195,10 @@ components:
           type: string
           example: "HandoverStation-2-1-2"
       required:
-      - order_id
-      - request_id
-      - status
-      - current_item_container
+        - order_id
+        - request_id
+        - status
+        - current_item_container
       title: RequestStatus
       type: object
 
@@ -205,7 +206,7 @@ paths:
   /api/v1/wms/orders:
     post:
       description: |-
-        Create a new order to be dispatched by MFM.
+        Create a new order to be dispatched by SFM.
         An order is composed of:
 
         - an order_id
@@ -215,13 +216,13 @@ paths:
         Responses:
         - 201: the order was created
         - 400: the order is invalid. All requests are rejected
-      operationId: mfm_rest_api_wms_api_order_create_order
+      operationId: SFM_rest_api_wms_api_order_create_order
       parameters: []
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Order'
+              $ref: "#/components/schemas/Order"
             examples:
               Order Creation Example 1:
                 description: This order contains a basic request to transport an item from a source to a target.
@@ -280,7 +281,6 @@ paths:
                       process_type: "return"
                       sequence_nb: 1
 
-
         required: true
       responses:
         201:
@@ -289,7 +289,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FailureResponse'
+                $ref: "#/components/schemas/FailureResponse"
               examples:
                 Order id already exists:
                   value:
@@ -299,7 +299,7 @@ paths:
 
       summary: Create an Order. (Required)
       tags:
-      - Orders
+        - Orders
   /api/v1/wms/requests:
     get:
       description: |-
@@ -313,7 +313,7 @@ paths:
 
         Response:
         - 200
-      operationId: mfm_rest_api_wms_api_order_requests_status
+      operationId: SFM_rest_api_wms_api_order_requests_status
       parameters: []
       responses:
         200:
@@ -323,7 +323,7 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/RequestStatus'
+                  $ref: "#/components/schemas/RequestStatus"
               examples:
                 RequestStatusList:
                   value:
@@ -344,7 +344,7 @@ paths:
 
       summary: Get request status
       tags:
-      - Orders
+        - Orders
   /api/v1/wms/orders/{order_id}/requests/{request_id}/clear:
     put:
       description: |-
@@ -354,20 +354,20 @@ paths:
         - 200: Request was cleared
         - 400: Request was already cleared (request is unterminated)
         - 404: unknown order_id and/or request_id
-      operationId: mfm_rest_api_wms_api_request_clear_request
+      operationId: SFM_rest_api_wms_api_request_clear_request
       parameters:
-      - in: path
-        name: order_id
-        required: true
-        schema:
-          title: Order Id
-          type: string
-      - in: path
-        name: request_id
-        required: true
-        schema:
-          title: Request Id
-          type: string
+        - in: path
+          name: order_id
+          required: true
+          schema:
+            title: Order Id
+            type: string
+        - in: path
+          name: request_id
+          required: true
+          schema:
+            title: Request Id
+            type: string
       responses:
         200:
           description: OK
@@ -375,7 +375,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FailureResponse'
+                $ref: "#/components/schemas/FailureResponse"
               examples:
                 Request started:
                   value:
@@ -387,7 +387,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FailureResponse'
+                $ref: "#/components/schemas/FailureResponse"
               examples:
                 Order not found:
                   value:
@@ -396,7 +396,7 @@ paths:
           description: Error, request not found
       summary: Clear a Request
       tags:
-      - Orders
+        - Orders
   /api/v1/wms/orders/{order_id}/requests/{request_id}/cancel:
     put:
       description: |-
@@ -406,20 +406,20 @@ paths:
         - 200: Request was canceled
         - 400: Request was not canceled (Order already terminated, assigned to a robot...)
         - 404: unknown order_id and/or request_id
-      operationId: mfm_rest_api_wms_api_request_cancel_request
+      operationId: SFM_rest_api_wms_api_request_cancel_request
       parameters:
-      - in: path
-        name: order_id
-        required: true
-        schema:
-          title: Order Id
-          type: string
-      - in: path
-        name: request_id
-        required: true
-        schema:
-          title: Request Id
-          type: string
+        - in: path
+          name: order_id
+          required: true
+          schema:
+            title: Order Id
+            type: string
+        - in: path
+          name: request_id
+          required: true
+          schema:
+            title: Request Id
+            type: string
       responses:
         200:
           description: OK
@@ -427,7 +427,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FailureResponse'
+                $ref: "#/components/schemas/FailureResponse"
               examples:
                 Request started:
                   value:
@@ -439,7 +439,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FailureResponse'
+                $ref: "#/components/schemas/FailureResponse"
               examples:
                 Order not found:
                   value:
@@ -448,7 +448,7 @@ paths:
           description: Error, request not found
       summary: Cancel a Request
       tags:
-      - Orders
+        - Orders
   /api/v1/wms/orders/{order_id}:
     put:
       description: |-
@@ -460,19 +460,19 @@ paths:
         - 200: Order was updated
         - 400: Order was not updated (already terminated, requests assigned to a robot...)
         - 404: unknown order_id
-      operationId: mfm_rest_api_wms_api_request_update_order
+      operationId: SFM_rest_api_wms_api_request_update_order
       parameters:
-      - in: path
-        name: order_id
-        required: true
-        schema:
-          title: Order Id
-          type: string
+        - in: path
+          name: order_id
+          required: true
+          schema:
+            title: Order Id
+            type: string
       requestBody:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Order'
+              $ref: "#/components/schemas/Order"
             examples:
               Order Update Example 1 (Request Update):
                 description: >-
@@ -557,7 +557,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FailureResponse'
+                $ref: "#/components/schemas/FailureResponse"
               examples:
                 Illegal order priority value:
                   value:
@@ -569,7 +569,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FailureResponse'
+                $ref: "#/components/schemas/FailureResponse"
               examples:
                 Order not found:
                   value:
@@ -578,52 +578,94 @@ paths:
           description: Error
       summary: Update an Order
       tags:
-      - Orders
+        - Orders
   /api/v1/wms/orders/{order_id}/cancel:
     put:
       description: |-
         Cancel an order by passing the order_id.
         Only orders that have not been started yet can be canceled.
 
-        - 200: Order was canceled
-        - 400: Order was not canceled (already terminated, assigned to a robot...)
-        - 404: unknown order_id
-      operationId: mfm_rest_api_wms_api_request_cancel_order
+        Returns a 207 Multi-Status response with individual status codes for each request in the order:
+        - 200: Request was successfully canceled
+        - 400: Request was not canceled (already terminated or assigned to a robot)
+        - 404: Unknown order_id or request_id
+      operationId: SFM_rest_api_wms_api_request_cancel_order
       parameters:
-      - in: path
-        name: order_id
-        required: true
-        schema:
-          title: Order Id
-          type: string
+        - in: path
+          name: order_id
+          required: true
+          schema:
+            title: Order Id
+            type: string
       responses:
-        200:
-          description: OK
-        400:
+        207:
+          description: Multi-Status - Contains individual responses for each request cancellation attempt
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FailureResponse'
+                type: array
+                items:
+                  type: object
+                  properties:
+                    code:
+                      type: integer
+                      enum: [200, 400, 404]
+                      description: Status code for individual request cancellation
+                    response:
+                      type: object
+                      properties:
+                        order_id:
+                          type: string
+                          description: The order ID
+                        request_id:
+                          type: string
+                          description: The request ID
+                      required:
+                        - order_id
+                        - request_id
+                  required:
+                    - code
+                    - response
               examples:
-                Order already terminated:
+                All requests successfully canceled:
                   value:
-                    error: "Order ORDER_01 has already been started."
-                    id: "example_error_id"
-          description: Error
-        404:
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/FailureResponse'
-              examples:
+                    - code: 200
+                      response:
+                        order_id: "ORDER_01"
+                        request_id: "REQUEST_01"
+                    - code: 200
+                      response:
+                        order_id: "ORDER_01"
+                        request_id: "REQUEST_02"
+                Mixed results with return order:
+                  value:
+                    - code: 200
+                      response:
+                        order_id: "ORDER_01"
+                        request_id: "REQUEST_01"
+                    - code: 200
+                      response:
+                        order_id: "ORDER_01_RETURN"
+                        request_id: "REQUEST_01_RETURN"
+                    - code: 400
+                      response:
+                        order_id: "ORDER_01"
+                        request_id: "REQUEST_02"
                 Order not found:
                   value:
-                    error: "Failed to cancel order ORDER_03 because its id is unknown."
-                    id: "example_error_id"
-          description: Error
+                    - code: 404
+                      response:
+                        order_id: "ORDER_03"
+                        request_id: "REQUEST_01"
+                Request already started:
+                  value:
+                    - code: 400
+                      response:
+                        order_id: "ORDER_01"
+                        request_id: "REQUEST_01"
       summary: Cancel an Order
       tags:
-      - Orders
+        - Orders
   /api/v1/world/compartments:
     get:
       description: |-
@@ -631,7 +673,7 @@ paths:
 
         - 200: Valid request, return compartments
         - 400: Bad request
-      operationId: mfm_rest_api_wms_api_request_world_compartments
+      operationId: SFM_rest_api_wms_api_request_world_compartments
       responses:
         200:
           description: OK
@@ -640,13 +682,13 @@ paths:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Container'
+                  $ref: "#/components/schemas/Container"
         400:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FailureResponse'
+                $ref: "#/components/schemas/FailureResponse"
           description: Error
       summary: Get the compartments in the current environment
       tags:
-      - Environment
+        - Environment
