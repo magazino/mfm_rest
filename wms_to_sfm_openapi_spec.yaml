@@ -203,7 +203,7 @@ components:
       type: object
 
 paths:
-  /api/v1/wms/orders:
+  /nodered/v1/wms/orders:
     post:
       description: |-
         Create a new order to be dispatched by SFM.
@@ -300,7 +300,7 @@ paths:
       summary: Create an Order. (Required)
       tags:
         - Orders
-  /api/v1/wms/requests:
+  /nodered/v1/wms/requests:
     get:
       description: |-
         Return a list of request status which are still open for the robot or were terminated by the robot and need to be cleared by the WMS (cf. POST /clear endpoint).
@@ -345,7 +345,7 @@ paths:
       summary: Get request status
       tags:
         - Orders
-  /api/v1/wms/orders/{order_id}/requests/{request_id}/clear:
+  /nodered/v1/wms/orders/{order_id}/requests/{request_id}/clear:
     put:
       description: |-
         Clear a Request of an order that has been finished (status completed or aborted). Once the request is cleared, it will not appear anymore in the GET /request endpoint: Magazino will assume that the request is now handled by the WMS.
@@ -397,7 +397,7 @@ paths:
       summary: Clear a Request
       tags:
         - Orders
-  /api/v1/wms/orders/{order_id}/requests/{request_id}/cancel:
+  /nodered/v1/wms/orders/{order_id}/requests/{request_id}/cancel:
     put:
       description: |-
         Cancel a Request of an order that has not been started yet.
@@ -449,7 +449,7 @@ paths:
       summary: Cancel a Request
       tags:
         - Orders
-  /api/v1/wms/orders/{order_id}:
+  /nodered/v1/wms/orders/{order_id}:
     put:
       description: |-
         Update an order by passing the order_id and the updated order. Updates must not contain the full order,
@@ -579,7 +579,7 @@ paths:
       summary: Update an Order
       tags:
         - Orders
-  /api/v1/wms/orders/{order_id}/cancel:
+  /nodered/v1/wms/orders/{order_id}/cancel:
     put:
       description: |-
         Cancel an order by passing the order_id.
@@ -666,7 +666,7 @@ paths:
       summary: Cancel an Order
       tags:
         - Orders
-  /api/v1/world/compartments:
+  /nodered/v1/world/compartments:
     get:
       description: |-
         Get the compartments in the current environments.
