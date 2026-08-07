@@ -184,8 +184,8 @@ components:
           title: Request Id
           type: string
           example: REQUEST_01
-        status:
-          title: Status
+        state:
+          title: State
           description: Status of the request (created, started, grasped, picked, completed, aborted)
           type: string
           example: "created"
@@ -197,7 +197,7 @@ components:
       required:
         - order_id
         - request_id
-        - status
+        - state
         - current_item_container
       title: RequestStatus
       type: object
@@ -329,15 +329,15 @@ paths:
                   value:
                     - order_id: "ORDER_01"
                       request_id: "REQUEST_01"
-                      status: "picked"
+                      state: "picked"
                       current_item_container: "soto-0001"
                     - order_id: "ORDER_01"
                       request_id: "REQUEST_02"
-                      status: "completed"
+                      state: "completed"
                       current_item_container: "HandoverStation-3"
                     - order_id: "ORDER_03"
                       request_id: "REQUEST_01"
-                      status: "completed"
+                      state: "completed"
                       current_item_container: "HandoverStation-3"
                       custom_fields:
                         customKey: customValue
