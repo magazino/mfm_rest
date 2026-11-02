@@ -287,14 +287,22 @@ paths:
           description: OK
         400:
           content:
-            application/json:
+            text/plain:
               schema:
-                $ref: "#/components/schemas/FailureResponse"
+                type: string
               examples:
                 Order id already exists:
-                  value:
-                    error: "Order with order_id ORDER_01 already exists"
-                    id: "example_error_id"
+                  value: "order_id ORDER_01 already exists"
+                Invalid priority:
+                  value: 'Failed to create order ORDER_01. Reason "priority" must be greater than 0'
+                Empty requests:
+                  value: 'Failed to create order ORDER_01. Reason "requests" must contain at least 1 items'
+                Unknown source compartment:
+                  value: "Failed to create order ORDER_01. Reason source compartment HandoverStation-9-1-1 is unknown"
+                Blocked target compartment:
+                  value: "Failed to create order ORDER_01. Reason target compartment HandoverStation-1-1-2 is blocked"
+                Item does not fit in target:
+                  value: "Failed to create order ORDER_01. Reason item item1 (0.6x0.6m) does not fit in target HandoverStation-1-1-2 (0.5m)"
           description: Error
 
       summary: Create an Order. (Required)
